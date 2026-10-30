@@ -1,0 +1,85 @@
+name: cs2stats
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cs2stats
+      POSTGRES_USER: cs2stats
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+    volumes:
+      - db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cs2stats -d cs2stats"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+
+  migrate:
+    image: postgres:17-alpine
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+    volumes:
+      - ./db/schema.sql:/schema.sql:ro
+    command: psql -v ON_ERROR_STOP=1 -h db -U cs2stats -d cs2stats -f /schema.sql
+
+  restore:
+    image: postgres:17-alpine
+    profiles:
+      - restore
+    restart: "no"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+    volumes:
+      - ./backups:/backups:ro
+    command: >
+      psql -v ON_ERROR_STOP=1 -h db -U cs2stats -d cs2stats
+      -c "truncate matches, match_heatmaps, app_config, ingest_lock, steam_users, steam_profiles, share_codes"
+      -f /backups/${RESTORE_FILE:-dump.sql}
+
+  web:
+    build:
+      context: .
+      args:
+        GIT_COMMIT: ${GIT_COMMIT:-}
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      SELFHOST_DATABASE_URL: postgres://cs2stats:${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}@db:5432/cs2stats
+      DATABASE_URL: ${DATABASE_URL:-}
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?defina ADMIN_PASSWORD no .env}
+      ADMIN_SECRET: ${ADMIN_SECRET:?defina ADMIN_SECRET no .env}
+      STEAM_API_KEY: ${STEAM_API_KEY:-}
+      DATABASE_CONNECT_TIMEOUT_MS: ${DATABASE_CONNECT_TIMEOUT_MS:-2000}
+      CLOUDFLARE_ZONE_ID: ${CLOUDFLARE_ZONE_ID:-}
+      CLOUDFLARE_PURGE_TOKEN: ${CLOUDFLARE_PURGE_TOKEN:-}
+    ports:
+      - "${PORT:-3000}:3000"
+    volumes:
+      - cache:/app/.next/cache
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    profiles:
+      - tunnel
+    restart: unless-stopped
+    depends_on:
+      - web
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    command: tunnel --no-autoupdate run
+
+volumes:
+  db:
+  cache:

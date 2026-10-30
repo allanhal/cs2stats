@@ -1,0 +1,13 @@
+.git
+.next
+node_modules
+backups
+docs
+AGENTS.md
+.env*
+.vercel
+*.dem
+*.dem.bz2
+*.dem.zst
+*.tsbuildinfo
+.DS_Store
