@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink-950: #08090c;
+  --color-ink-900: #0d0f14;
+  --color-ink-850: #12141b;
+  --color-ink-800: #181b24;
+  --color-ink-700: #22262f;
+  --color-ink-600: #32374279;
+  --color-fog-500: #8b93a7;
+  --color-fog-300: #c3c9d6;
+  --color-fog-100: #eef1f6;
+  --color-win: #3fcf8e;
+  --color-loss: #f2566a;
+  --color-ct: #5aa9f5;
+  --color-tr: #e8b23a;
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background:
+    radial-gradient(1100px 520px at 12% -12%, #1a2033 0%, transparent 62%),
+    radial-gradient(900px 480px at 88% 0%, #161d2b 0%, transparent 58%),
+    var(--color-ink-950);
+  color: var(--color-fog-100);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-point .chart-tip {
+  opacity: 0;
+  transition: opacity 0.12s ease-out;
+  pointer-events: none;
+}
+.chart-point:hover .chart-tip,
+.chart-point:focus-visible .chart-tip {
+  opacity: 1;
+}
+.chart-point:focus-visible {
+  outline: none;
+}
+.chart-point:hover .chart-dot,
+.chart-point:focus-visible .chart-dot {
+  r: 5.5;
+}

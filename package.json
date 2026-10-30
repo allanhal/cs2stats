@@ -1,0 +1,48 @@
+{
+  "name": "cs2stats",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/bundle-extract.mjs && next dev",
+    "build": "node scripts/bundle-extract.mjs && next build",
+    "start": "next start",
+    "lint": "eslint",
+    "migrate": "dotenv -e .env.local -- tsx scripts/migrate.ts",
+    "extract": "tsx scripts/test-extract.ts",
+    "db:local": "tsx scripts/local-db.mts",
+    "seed": "dotenv -e .env.local -- tsx scripts/seed.ts",
+    "roster": "dotenv -e .env.local -- tsx scripts/roster.mts",
+    "test": "tsx scripts/test-queue.mts",
+    "matches": "dotenv -e .env.local -- tsx scripts/list-matches.mts",
+    "profiles": "dotenv -e .env.local -- tsx scripts/profiles.mts",
+    "bundle": "node scripts/bundle-extract.mjs",
+    "refresh": "dotenv -e .env.local -- tsx scripts/refresh.ts"
+  },
+  "dependencies": {
+    "@laihoe/demoparser2": "^0.42.0",
+    "@vercel/blob": "^2.8.2",
+    "@vercel/functions": "^3.10.4",
+    "next": "16.4.3",
+    "pg": "^8.23.1",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "unbzip2-stream": "^1.4.3"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.13",
+    "@electric-sql/pglite-socket": "^0.2.16",
+    "@tailwindcss/turbopack": "^4",
+    "@types/node": "^24.19.2",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "dotenv-cli": "^11.1.0",
+    "esbuild": "^0.28.2",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.3",
+    "tailwindcss": "^4",
+    "tsx": "^4.23.15",
+    "typescript": "^5"
+  },
+  "packageManager": "pnpm@10.33.0"
+}
