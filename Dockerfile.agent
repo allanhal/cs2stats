@@ -1,0 +1,13 @@
+FROM node:24-slim
+WORKDIR /app
+RUN corepack enable
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
+COPY lib ./lib
+COPY scripts ./scripts
+COPY tsconfig.json ./
+ENV GC_STATE_FILE=/var/lib/gc-agent/state.json
+ENV GC_WORK_DIR=/var/lib/gc-agent/work
+RUN mkdir -p /var/lib/gc-agent/work && chown -R node:node /var/lib/gc-agent
+USER node
+CMD ["pnpm", "exec", "tsx", "scripts/gc-agent.mts"]
