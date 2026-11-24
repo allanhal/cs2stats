@@ -20,6 +20,15 @@ const zeroByBuy = () => ({
   full: zeroBuy(),
 });
 const zeroHits = () => ({ head: 0, chest: 0, stomach: 0, arms: 0, legs: 0, other: 0 });
+const zeroAwpSide = () => ({
+  rounds: 0,
+  roundsWon: 0,
+  roundsWithKill: 0,
+  roundsSurvived: 0,
+  shots: 0,
+  hits: 0,
+  kills: 0,
+});
 
 function player(
   steamId: string,
@@ -70,6 +79,7 @@ function player(
     awpRepeeks: 0,
     awpRepeekHits: 0,
     awpMissDeaths: 0,
+    awpBySide: { CT: zeroAwpSide(), T: zeroAwpSide() },
     hits: zeroHits(),
     hitDamage: zeroHits(),
     hitsBySide: { CT: zeroHits(), T: zeroHits() },
@@ -143,6 +153,7 @@ function round(
     buy: { A: 4000, B: 4000 },
     buyType: { A: "full" as BuyType, B: "full" as BuyType },
     snipers: { A: 0, B: 0 },
+    awps: { A: 0, B: 0 },
     score: { A: 0, B: 0 },
     ...over,
   };

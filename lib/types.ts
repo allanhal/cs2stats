@@ -2,6 +2,16 @@ export type Side = "CT" | "T";
 
 export type HitGroup = "head" | "chest" | "stomach" | "arms" | "legs" | "other";
 
+export interface AwpSideStats {
+  rounds: number;
+  roundsWon: number;
+  roundsWithKill: number;
+  roundsSurvived: number;
+  shots: number;
+  hits: number;
+  kills: number;
+}
+
 export interface WeaponUse {
   shots: number;
   hits: number;
@@ -60,6 +70,7 @@ export interface PlayerMatchStats {
   awpRepeeks: number;
   awpRepeekHits: number;
   awpMissDeaths: number;
+  awpBySide: Record<Side, AwpSideStats>;
   hits: Record<HitGroup, number>;
   hitDamage: Record<HitGroup, number>;
   hitsBySide: Record<Side, Record<HitGroup, number>>;
@@ -137,6 +148,7 @@ export interface RoundRecord {
   buy: { A: number; B: number };
   buyType: { A: BuyType; B: BuyType };
   snipers: { A: number; B: number };
+  awps: { A: number; B: number };
 
   score: { A: number; B: number };
 }

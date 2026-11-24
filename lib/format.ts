@@ -3,6 +3,10 @@ export const pct = (v: number, digits = 0) =>
 
 export const num = (v: number, digits = 2) => v.toFixed(digits);
 
+// Diferença entre dois aproveitamentos, em pontos percentuais e com sinal.
+export const pp = (v: number, digits = 0) =>
+  `${v >= 0 ? "+" : "−"}${(Math.abs(v) * 100).toFixed(digits)} p.p.`;
+
 const MAP_LABELS: Record<string, string> = {
   de_cbble: "Cobblestone",
 };
