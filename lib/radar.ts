@@ -20,6 +20,7 @@ const radars: Record<string, Radar> = {
   de_train: { image: "/radar/de_train.png", posX: -2308, posY: 2078, scale: 4.082077 },
   de_basalt: { image: "/radar/de_basalt.png", posX: -2345.6, posY: 2391.8, scale: 4.37 },
   de_brewery: { image: "/radar/de_brewery.png", posX: -4122.4, posY: 4394.4, scale: 4.3640624 },
+  de_cbble: { image: "/radar/de_cbble.png", posX: -3615, posY: 2712, scale: 4.724792 },
   de_dogtown: { image: "/radar/de_dogtown.png", posX: -1741.0228, posY: 3295.1, scale: 2.0323243 },
   de_edin: { image: "/radar/de_edin.png", posX: -383.30038, posY: 4420.2134, scale: 4.803717 },
   de_grail: { image: "/radar/de_grail.png", posX: -4395.903, posY: 4203.903, scale: 4.3513728 },

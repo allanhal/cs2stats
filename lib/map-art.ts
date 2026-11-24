@@ -7,6 +7,7 @@ const MAPS_WITH_ART = new Set([
   "de_basalt",
   "de_brewery",
   "de_cache",
+  "de_cbble",
   "de_dogtown",
   "de_dust2",
   "de_edin",
@@ -46,6 +47,7 @@ const ROTATION = [
   "de_dogtown",
   "de_basalt",
   "cs_agency",
+  "de_cbble",
 ];
 
 export function backdropMapOf(date: Date): string {

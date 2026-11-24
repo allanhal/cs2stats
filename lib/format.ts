@@ -3,7 +3,13 @@ export const pct = (v: number, digits = 0) =>
 
 export const num = (v: number, digits = 2) => v.toFixed(digits);
 
+const MAP_LABELS: Record<string, string> = {
+  de_cbble: "Cobblestone",
+};
+
 export function mapLabel(map: string): string {
+  const label = MAP_LABELS[map];
+  if (label) return label;
   const name = map.replace(/^de_|^cs_/, "");
   return name.charAt(0).toUpperCase() + name.slice(1);
 }

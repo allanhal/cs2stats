@@ -341,6 +341,7 @@ const MAP_CODES: Record<string, string> = {
   cs_agency: "AG",
   cs_italy: "IT",
   cs_office: "OF",
+  de_cbble: "CB",
 };
 
 function mapCode(map: string): string {
