@@ -6,6 +6,7 @@ import type {
   Side,
   WeaponUse,
 } from "./types";
+import { AWP_SIDE_VERSION } from "./schema";
 
 export const HIT_GROUPS: HitGroup[] = ["head", "chest", "stomach", "arms", "legs", "other"];
 
@@ -249,6 +250,111 @@ export function byMap(views: MatchView[]): MapStats[] {
   }
   for (const s of maps.values()) s.winRate = s.played ? s.wins / s.played : 0;
   return Array.from(maps.values()).sort((a, b) => b.played - a.played || b.winRate - a.winRate);
+}
+
+export interface MapAwpStats {
+  map: string;
+
+  rounds: number;
+  roundsWon: number;
+  roundsLost: number;
+  winRate: number;
+
+  dryRounds: number;
+  dryRoundsWon: number;
+  dryWinRate: number;
+
+  edge: number;
+
+  picks: number;
+  killRounds: number;
+  killRoundRate: number;
+  survivedRounds: number;
+  survivalRate: number;
+
+  shots: number;
+  hits: number;
+  accuracy: number;
+  kills: number;
+  killsPerRound: number;
+}
+
+// Quanto a AWP rende de um lado, mapa por mapa: aproveitamento dos rounds em que
+// alguém do nosso time saiu do freeze com AWP, contra o dos rounds sem AWP no
+// mesmo lado e no mesmo mapa, mais o que a arma produziu nesses rounds.
+export function awpByMap(views: MatchView[], side: Side = "T"): MapAwpStats[] {
+  const maps = new Map<string, MapAwpStats>();
+
+  for (const v of views) {
+    const squad = v.ourSquad;
+    if (!squad || v.match.version < AWP_SIDE_VERSION) continue;
+
+    const key = v.match.map;
+    let s = maps.get(key);
+    if (!s) {
+      s = {
+        map: key,
+        rounds: 0,
+        roundsWon: 0,
+        roundsLost: 0,
+        winRate: 0,
+        dryRounds: 0,
+        dryRoundsWon: 0,
+        dryWinRate: 0,
+        edge: 0,
+        picks: 0,
+        killRounds: 0,
+        killRoundRate: 0,
+        survivedRounds: 0,
+        survivalRate: 0,
+        shots: 0,
+        hits: 0,
+        accuracy: 0,
+        kills: 0,
+        killsPerRound: 0,
+      };
+      maps.set(key, s);
+    }
+
+    for (const r of v.match.rounds) {
+      const ourSide: Side = r.winnerSquad === squad ? r.winnerSide : otherSide(r.winnerSide);
+      if (ourSide !== side) continue;
+      const won = r.winnerSquad === squad;
+      if ((r.awps?.[squad] ?? 0) > 0) {
+        s.rounds++;
+        if (won) s.roundsWon++;
+        else s.roundsLost++;
+      } else {
+        s.dryRounds++;
+        if (won) s.dryRoundsWon++;
+      }
+    }
+
+    for (const p of v.ourPlayers) {
+      const awp = p.awpBySide?.[side];
+      if (!awp) continue;
+      s.picks += awp.rounds;
+      s.killRounds += awp.roundsWithKill;
+      s.survivedRounds += awp.roundsSurvived;
+      s.shots += awp.shots;
+      s.hits += awp.hits;
+      s.kills += awp.kills;
+    }
+  }
+
+  for (const s of maps.values()) {
+    s.winRate = s.rounds ? s.roundsWon / s.rounds : 0;
+    s.dryWinRate = s.dryRounds ? s.dryRoundsWon / s.dryRounds : 0;
+    s.edge = s.dryRounds ? s.winRate - s.dryWinRate : 0;
+    s.killRoundRate = s.picks ? s.killRounds / s.picks : 0;
+    s.survivalRate = s.picks ? s.survivedRounds / s.picks : 0;
+    s.accuracy = s.shots ? s.hits / s.shots : 0;
+    s.killsPerRound = s.rounds ? s.kills / s.rounds : 0;
+  }
+
+  return Array.from(maps.values())
+    .filter((s) => s.rounds > 0)
+    .sort((a, b) => b.rounds - a.rounds || b.winRate - a.winRate);
 }
 
 export interface PlayerAggregate {

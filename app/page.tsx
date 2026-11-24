@@ -23,6 +23,7 @@ import {
   worstPlayers,
   lobbyImpact,
   byMap,
+  awpByMap,
   lineups,
   roundBreakdown,
   totals,
@@ -36,7 +37,7 @@ import { HERO_TONES, buildHeroCard } from "@/lib/bosta";
 import { loadDataset } from "@/lib/data";
 import { insights } from "@/lib/insights";
 import type { Profiles } from "@/lib/profiles";
-import { BUY_LABELS, mapLabel, pct } from "@/lib/format";
+import { BUY_LABELS, mapLabel, num, pct, pp } from "@/lib/format";
 import { LocalTime } from "@/components/local-time";
 import { MapBlendBackdrop } from "@/components/map-blend-backdrop";
 import { MapWinrateChart, type MapWinrateRow } from "@/components/map-winrate-chart";
@@ -63,6 +64,7 @@ export default async function Dashboard() {
 
   const t = totals(views);
   const maps = byMap(views);
+  const awpTr = awpByMap(views, "T");
   const players = aggregatePlayers(views, { tracked, onlyOurTeam: true });
   const ranked = players.filter((p) => p.matches >= MIN_MATCHES);
   const podium = ["mvp", "ouro", "prata"] as const;
@@ -282,6 +284,64 @@ export default async function Dashboard() {
           </tbody>
         </Table>
       </Card>
+
+      {awpTr.length > 0 ? (
+        <Card>
+          <SectionTitle
+            title="Impacto da AWP no TR"
+            hint="Só os rounds de TR em que alguém do time saiu do freeze com AWP na mão. O aproveitamento desses rounds aparece ao lado do aproveitamento dos rounds de TR sem AWP no mesmo mapa, e a diferença entre os dois é o que a arma está rendendo ali. Depois vem o que ela produziu: em quantos desses rounds o AWPer matou com ela e em quantos terminou vivo."
+          />
+          <Table>
+            <thead>
+              <tr>
+                <Th align="left">Mapa</Th>
+                <Th title="Rounds de TR com AWP, do total de rounds de TR no mapa">Rounds</Th>
+                <Th title="Rounds de TR com AWP ganhos e perdidos">V–D</Th>
+                <Th title="Aproveitamento dos rounds de TR com AWP">Com AWP</Th>
+                <Th title="Aproveitamento dos rounds de TR sem AWP no mesmo mapa">Sem AWP</Th>
+                <Th title="Diferença entre os dois aproveitamentos, em pontos percentuais">
+                  Diferença
+                </Th>
+                <Th title="Rounds com AWP em que o AWPer matou alguém de AWP">Matou</Th>
+                <Th title="Rounds com AWP em que o AWPer terminou o round vivo">Vivo</Th>
+                <Th title="Kills de AWP por round de TR com AWP">K/round</Th>
+                <Th title="Tiros de AWP que acertaram alguém, no lado TR">Precisão</Th>
+                <Th align="left">&nbsp;</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {awpTr.map((m) => (
+                <tr key={m.map}>
+                  <Td align="left" className="font-medium">
+                    <MapTag map={m.map} />
+                  </Td>
+                  <Td>
+                    {m.rounds}
+                    <span className="text-fog-500"> de {m.rounds + m.dryRounds}</span>
+                  </Td>
+                  <Td>
+                    <span className="text-win">{m.roundsWon}</span>
+                    <span className="text-fog-500">–</span>
+                    <span className="text-loss">{m.roundsLost}</span>
+                  </Td>
+                  <Td className={m.winRate >= 0.5 ? "text-win" : "text-loss"}>{pct(m.winRate)}</Td>
+                  <Td className="text-fog-500">{m.dryRounds > 0 ? pct(m.dryWinRate) : "—"}</Td>
+                  <Td className={m.edge >= 0 ? "text-win" : "text-loss"}>
+                    {m.dryRounds > 0 ? pp(m.edge) : "—"}
+                  </Td>
+                  <Td>{m.picks > 0 ? pct(m.killRoundRate) : "—"}</Td>
+                  <Td>{m.picks > 0 ? pct(m.survivalRate) : "—"}</Td>
+                  <Td className="text-fog-500">{num(m.killsPerRound, 2)}</Td>
+                  <Td className="text-fog-500">{m.shots > 0 ? pct(m.accuracy) : "—"}</Td>
+                  <Td align="left" className="w-28">
+                    <Meter value={m.winRate} />
+                  </Td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </Card>
+      ) : null}
 
       {highlights.length > 0 ? (
         <section className="space-y-4">

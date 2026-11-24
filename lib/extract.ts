@@ -3,6 +3,7 @@ import { closeSync, openSync, readSync, statSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { parseFileName } from "./filename";
 import type {
+  AwpSideStats,
   BuyType,
   HitGroup,
   MatchRecord,
@@ -207,6 +208,16 @@ function emptyHitGroups(): Record<HitGroup, number> {
   return { head: 0, chest: 0, stomach: 0, arms: 0, legs: 0, other: 0 };
 }
 
+const emptyAwpSide = (): AwpSideStats => ({
+  rounds: 0,
+  roundsWon: 0,
+  roundsWithKill: 0,
+  roundsSurvived: 0,
+  shots: 0,
+  hits: 0,
+  kills: 0,
+});
+
 const emptyWeaponUse = (): WeaponUse => ({
   shots: 0,
   hits: 0,
@@ -302,6 +313,7 @@ function emptyPlayer(steamId: string, name: string, squad: "A" | "B"): PlayerMat
     awpRepeeks: 0,
     awpRepeekHits: 0,
     awpMissDeaths: 0,
+    awpBySide: { CT: emptyAwpSide(), T: emptyAwpSide() },
     hits: emptyHitGroups(),
     hitDamage: emptyHitGroups(),
     hitsBySide: { CT: emptyHitGroups(), T: emptyHitGroups() },
@@ -696,6 +708,7 @@ export function extractMatch(filePath: string, meta: ExtractMeta): MatchRecord {
 
   const rounds: RoundRecord[] = [];
   const sniperPlayers = kept.map(() => new Set<string>());
+  const awpPlayers = kept.map(() => new Set<string>());
   const score = { A: 0, B: 0 };
 
   kept.forEach((round, i) => {
@@ -704,6 +717,7 @@ export function extractMatch(filePath: string, meta: ExtractMeta): MatchRecord {
 
     const buy = { A: 0, B: 0 };
     const snipers = { A: 0, B: 0 };
+    const awps = { A: 0, B: 0 };
     if (round.freeze != null) {
       for (const row of snapshotAt(round.freeze)) {
         if (!row.steamid) continue;
@@ -711,12 +725,16 @@ export function extractMatch(filePath: string, meta: ExtractMeta): MatchRecord {
         if (!squad) continue;
         buy[squad] += num(row["CCSPlayerPawn.m_unFreezetimeEndEquipmentValue"]);
         const inventory = row.inventory;
-        const hasSniper =
-          Array.isArray(inventory) &&
-          inventory.some((weapon) => ECONOMY_SNIPERS.has(normalizeWeapon(weapon)));
+        const guns = Array.isArray(inventory) ? inventory.map(normalizeWeapon) : [];
+        const hasSniper = guns.some((weapon) => ECONOMY_SNIPERS.has(weapon));
         if (hasSniper) {
           snipers[squad] += 1;
           sniperPlayers[i].add(row.steamid);
+          playerAt(row.steamid, row.name, round.freeze);
+        }
+        if (guns.includes("awp")) {
+          awps[squad] += 1;
+          awpPlayers[i].add(row.steamid);
           playerAt(row.steamid, row.name, round.freeze);
         }
       }
@@ -736,6 +754,7 @@ export function extractMatch(filePath: string, meta: ExtractMeta): MatchRecord {
         B: classifyBuy(buy.B, isFirstOfHalf[i]),
       },
       snipers,
+      awps,
       score: { ...score },
     });
   });
@@ -962,6 +981,7 @@ export function extractMatch(filePath: string, meta: ExtractMeta): MatchRecord {
 
     const startTick = round.freeze ?? round.from;
     const killsThisRound = new Map<string, number>();
+    const awpKillsThisRound = new Map<string, number>();
     const deathTickOf = new Map<string, number>();
     const firstKillTickOf = new Map<string, number>();
     const assistedThisRound = new Set<string>();
@@ -1028,6 +1048,10 @@ export function extractMatch(filePath: string, meta: ExtractMeta): MatchRecord {
           use.kills += 1;
         }
         if (ECONOMY_SNIPERS.has(weapon ?? "")) attacker.sniperKills += 1;
+        if (gun === "awp") {
+          if (attackerSide) attacker.awpBySide[attackerSide].kills += 1;
+          awpKillsThisRound.set(attackerId, (awpKillsThisRound.get(attackerId) ?? 0) + 1);
+        }
         const place = str(d.attacker_last_place_name);
         if (place) attacker.killsByPlace[place] = (attacker.killsByPlace[place] ?? 0) + 1;
         if (d.attackerblind === true) attacker.blindKills += 1;
@@ -1118,6 +1142,13 @@ export function extractMatch(filePath: string, meta: ExtractMeta): MatchRecord {
       if (!p) continue;
       const survived = !diedThisRound.has(steamId);
       if (survived) p.survivedRounds += 1;
+      if (awpPlayers[roundIndex].has(steamId)) {
+        const awp = p.awpBySide[side];
+        awp.rounds += 1;
+        if (side === winnerSide) awp.roundsWon += 1;
+        if (survived) awp.roundsSurvived += 1;
+        if ((awpKillsThisRound.get(steamId) ?? 0) > 0) awp.roundsWithKill += 1;
+      }
       if ((killsThisRound.get(steamId) ?? 0) === 0) {
         p.zeroKillRounds += 1;
         const dry = (dryKillRounds.get(steamId) ?? 0) + 1;
@@ -1276,6 +1307,11 @@ export function extractMatch(filePath: string, meta: ExtractMeta): MatchRecord {
 
     ordered.forEach((tick, index) => {
       p.awpShots += 1;
+      const shotSide = sideIn(null, roundAt(tick), steamId);
+      if (shotSide) {
+        p.awpBySide[shotSide].shots += 1;
+        if (landed[index]) p.awpBySide[shotSide].hits += 1;
+      }
       if (landed[index]) {
         p.awpHits += 1;
         return;

@@ -292,6 +292,8 @@ const GLOSSARY: Record<string, string> = {
   teamFlashSeconds: "Segundos de cegueira causados em companheiros.",
   enemyFlashSeconds: "Segundos de cegueira causados em inimigos.",
   awpRepeeks: "Vezes que voltou a aparecer no mesmo ângulo com a AWP.",
+  awpBySide:
+    "AWP separada por lado: rounds começados com AWP na mão, quantos desses o time ganhou, em quantos matou de AWP, em quantos terminou vivo, mais tiros, acertos e kills.",
   rounds: "Em matches[].rounds, a ordem é a do jogo; score é o placar depois do round.",
 };
 

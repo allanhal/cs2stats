@@ -1,6 +1,13 @@
 import { cleanNick } from "./format";
 import type { Profiles } from "./profiles";
-import type { AppConfig, HitGroup, MatchRecord, PlayerMatchStats, WeaponUse } from "./types";
+import type {
+  AppConfig,
+  AwpSideStats,
+  HitGroup,
+  MatchRecord,
+  PlayerMatchStats,
+  WeaponUse,
+} from "./types";
 
 const HIT_GROUPS: HitGroup[] = ["head", "chest", "stomach", "arms", "legs", "other"];
 
@@ -37,6 +44,18 @@ export function makeIdentity(config: AppConfig, profiles: Profiles = {}): Identi
       const id = canonical(steamId);
       return names[id] || profiles[id]?.persona || cleanNick(fallback);
     },
+  };
+}
+
+function sumAwpSide(a?: AwpSideStats, b?: AwpSideStats): AwpSideStats {
+  return {
+    rounds: (a?.rounds ?? 0) + (b?.rounds ?? 0),
+    roundsWon: (a?.roundsWon ?? 0) + (b?.roundsWon ?? 0),
+    roundsWithKill: (a?.roundsWithKill ?? 0) + (b?.roundsWithKill ?? 0),
+    roundsSurvived: (a?.roundsSurvived ?? 0) + (b?.roundsSurvived ?? 0),
+    shots: (a?.shots ?? 0) + (b?.shots ?? 0),
+    hits: (a?.hits ?? 0) + (b?.hits ?? 0),
+    kills: (a?.kills ?? 0) + (b?.kills ?? 0),
   };
 }
 
@@ -127,6 +146,10 @@ function mergePlayers(a: PlayerMatchStats, b: PlayerMatchStats): PlayerMatchStat
       deaths: a.bySide.T.deaths + b.bySide.T.deaths,
       damage: a.bySide.T.damage + b.bySide.T.damage,
     },
+  };
+  merged.awpBySide = {
+    CT: sumAwpSide(a.awpBySide?.CT, b.awpBySide?.CT),
+    T: sumAwpSide(a.awpBySide?.T, b.awpBySide?.T),
   };
   merged.hits = Object.fromEntries(
     HIT_GROUPS.map((group) => [group, (a.hits?.[group] ?? 0) + (b.hits?.[group] ?? 0)]),
